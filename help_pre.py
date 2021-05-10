@@ -58,7 +58,7 @@ data_path = Paths
 val_path = DATA_PATH / 'ForPred'
 Val_path= [val_path]
 
-mirrored_strategy = tf.distribute.MirroredStrategy()
+#mirrored_strategy = tf.distribute.MirroredStrategy()
 
 def matfile_to_dft(folder_path, drop=None):
     '''
@@ -210,12 +210,12 @@ def create_framest(data_path, split_perc, segment_length, step_length):
     DE_df = pd.DataFrame([df.file, df.DE_time, df.label]).T.rename(columns={'DE_time':'signal'})
     DE_df = DE_df.dropna()
     df = DE_df.append(FE_df, ignore_index=True)
-    df = df.sample(frac=1, random_state=2)
+    df = df.sample(frac=1, random_state=1)
     
     features = df.columns[1:]
     target = 'label'
 
-    test_frame = df.sample(frac = split_perc, random_state=2) # shuffle the dataframe, random_state is a number seed for reproducability
+    test_frame = df.sample(frac = split_perc, random_state=1) # shuffle the dataframe, random_state is a number seed for reproducability
     testframe_id_list = test_frame.index
     train_frame = df.drop(testframe_id_list)
 
@@ -247,8 +247,8 @@ def create_data_batcht(data_path, split_perc, segment_length, step_length, b_siz
     X_test = X_test_frame
     y_train = y_train_frame
     y_test = y_test_frame
-    print('class balance of train frame: %s' % y_train['label'].value_counts())
-    print('class balance of validation (test) frame: %s' % y_test['label'].value_counts())
+    #print('class balance of train frame: %s' % y_train['label'].value_counts())
+    #print('class balance of validation (test) frame: %s' % y_test['label'].value_counts())
     iter_range = [*range(0, len(X_train), 1)]
     X_t, y_t, X_s, y_s = [],[], [],[]
     #print('X_train Length: %s , X_test Length: %s' % (len(X_train),len(X_test)))
@@ -273,7 +273,9 @@ def create_data_batcht(data_path, split_perc, segment_length, step_length, b_siz
     y_s1 = 1   
     
     train_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_t).reshape(len(X_train), segment_length, 1), np.asarray(y_t).reshape(-1, 1))).batch(b_size).with_options(options).cache()
+    #print('val dataset: %s' % train_dataset.dtypes)
     test_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_s).reshape(len(X_test), segment_length, 1), np.asarray(y_s).reshape(-1, 1))).batch(b_size).with_options(options).cache()
+    #print('val dataset: %s' % test_dataset.dtypes)
     #print('Create Batch Time: %s' % (time.time() - create_frame_start))
     return train_dataset, test_dataset, y_s1
 
@@ -319,7 +321,8 @@ def sig_divide(segment_length, step_length, frame):
     df_output1 = pd.concat([df_tmp1[['label']], pd.DataFrame(np.vstack(df_tmp1["signal"].values)).astype('float32')], axis=1 )
     map_label = {'N':0, 'B':1, 'IR':2, 'OR':3}
     df_output1['label'] = df_output1['label'].map(map_label).astype('int16')
-    print('Sig Divide Time: %s' % (time.time() - create_frame_start))
+    #print('Sig Divide Time: %s' % (time.time() - create_frame_start))
+    #print('val dataset: %s' % df_output1.dtypes)
     return df_output1
     
     
@@ -358,7 +361,7 @@ def create_pred_batch(Val_path, segment_length=2400, step_length=300, b_size=256
     
     X_val = X_val_frame
     y_val = y_val_frame
-    #print('class balance of train frame: %s' % y_train['label'].value_counts())
+    #print('class balance of train frame: %s' % y_val['label'].value_counts())
     #print('class balance of validation (test) frame: %s' % y_test['label'].value_counts())
     iter_range = [*range(0, len(X_val), 1)]
     X_v, y_v = [],[]
@@ -376,6 +379,7 @@ def create_pred_batch(Val_path, segment_length=2400, step_length=300, b_size=256
     y_v1 = np.asarray(y_v).reshape(-1, 1)
     X_v1 = np.asarray(X_v).reshape(len(X_val), segment_length, 1) #Might just be np.array()
     val_dataset = tf.data.Dataset.from_tensor_slices((X_v1, y_v1)).batch(b_size).with_options(options)
+    #print('val dataset: %s' % val_dataset.dtypes)
     
     return val_dataset, X_v1, y_v1
 
