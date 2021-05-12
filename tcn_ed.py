@@ -6,8 +6,8 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers import Activation, SpatialDropout1D, Lambda
 from tensorflow.keras.layers import Layer, Conv1D, Dense, BatchNormalization, LayerNormalization
 from tensorflow.keras import mixed_precision
-tf.random.set_seed(1234)
-seed = 1235
+#tf.random.set_seed(1234)
+#seed = 1235
 
 def is_power_of_two(num: int):
     return num != 0 and ((num & (num - 1)) == 0)

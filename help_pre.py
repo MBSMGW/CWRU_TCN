@@ -20,8 +20,8 @@ from tcn import TCN, tcn_full_summary, compiled_tcn
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import mixed_precision
-tf.random.set_seed(1234)
-seed = 1235
+#tf.random.set_seed(1234)
+#seed = 1235
 import time
 
 working_dir = Path('.')
@@ -247,8 +247,8 @@ def create_data_batcht(data_path, split_perc, segment_length, step_length, b_siz
     X_test = X_test_frame
     y_train = y_train_frame
     y_test = y_test_frame
-    #print('class balance of train frame: %s' % y_train['label'].value_counts())
-    #print('class balance of validation (test) frame: %s' % y_test['label'].value_counts())
+    print('class balance of train frame: %s' % y_train['label'].value_counts())
+    print('class balance of test frame: %s' % y_test['label'].value_counts())
     iter_range = [*range(0, len(X_train), 1)]
     X_t, y_t, X_s, y_s = [],[], [],[]
     #print('X_train Length: %s , X_test Length: %s' % (len(X_train),len(X_test)))
@@ -271,13 +271,12 @@ def create_data_batcht(data_path, split_perc, segment_length, step_length, b_siz
     options.experimental_optimization.apply_default_optimizations = True
     
     y_s1 = 1   
-    
     train_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_t).reshape(len(X_train), segment_length, 1), np.asarray(y_t).reshape(-1, 1))).batch(b_size).with_options(options).cache()
     #print('val dataset: %s' % train_dataset.dtypes)
     test_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_s).reshape(len(X_test), segment_length, 1), np.asarray(y_s).reshape(-1, 1))).batch(b_size).with_options(options).cache()
     #print('val dataset: %s' % test_dataset.dtypes)
     #print('Create Batch Time: %s' % (time.time() - create_frame_start))
-    return train_dataset, test_dataset, y_s1
+    return train_dataset, test_dataset, y_s1, y_train['label'].value_counts(), y_test['label'].value_counts()
 
 
 def sig_divide(segment_length, step_length, frame):
@@ -361,7 +360,7 @@ def create_pred_batch(Val_path, segment_length=2400, step_length=300, b_size=256
     
     X_val = X_val_frame
     y_val = y_val_frame
-    #print('class balance of train frame: %s' % y_val['label'].value_counts())
+    print('class balance of val frame: %s' % y_val['label'].value_counts())
     #print('class balance of validation (test) frame: %s' % y_test['label'].value_counts())
     iter_range = [*range(0, len(X_val), 1)]
     X_v, y_v = [],[]
@@ -381,5 +380,5 @@ def create_pred_batch(Val_path, segment_length=2400, step_length=300, b_size=256
     val_dataset = tf.data.Dataset.from_tensor_slices((X_v1, y_v1)).batch(b_size).with_options(options)
     #print('val dataset: %s' % val_dataset.dtypes)
     
-    return val_dataset, X_v1, y_v1
+    return val_dataset, X_v1, y_v1, y_val['label'].value_counts()
 
