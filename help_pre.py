@@ -58,7 +58,7 @@ data_path = Paths
 val_path = DATA_PATH / 'ForPred'
 Val_path= [val_path]
 
-#mirrored_strategy = tf.distribute.MirroredStrategy()
+mirrored_strategy = tf.distribute.MirroredStrategy()
 
 def matfile_to_dft(folder_path, drop=None):
     '''
@@ -210,7 +210,7 @@ def create_framest(data_path, split_perc, segment_length, step_length):
     DE_df = pd.DataFrame([df.file, df.DE_time, df.label]).T.rename(columns={'DE_time':'signal'})
     DE_df = DE_df.dropna()
     df = DE_df.append(FE_df, ignore_index=True)
-    df = df.sample(frac=1, random_state=1)
+    df = df.sample(frac=1)
     
     features = df.columns[1:]
     target = 'label'
@@ -271,12 +271,12 @@ def create_data_batcht(data_path, split_perc, segment_length, step_length, b_siz
     options.experimental_optimization.apply_default_optimizations = True
     
     y_s1 = 1   
-    train_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_t).reshape(len(X_train), segment_length, 1), np.asarray(y_t).reshape(-1, 1))).batch(b_size).with_options(options).cache()
+    train_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_t).reshape(len(X_train), segment_length, 1), np.asarray(y_t).reshape(-1, 1))).batch(b_size).with_options(options).cache().prefetch(10)
     #print('val dataset: %s' % train_dataset.dtypes)
-    test_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_s).reshape(len(X_test), segment_length, 1), np.asarray(y_s).reshape(-1, 1))).batch(b_size).with_options(options).cache()
+    test_dataset = tf.data.Dataset.from_tensor_slices((np.array(X_s).reshape(len(X_test), segment_length, 1), np.asarray(y_s).reshape(-1, 1))).batch(b_size).with_options(options).cache().prefetch(10)
     #print('val dataset: %s' % test_dataset.dtypes)
     #print('Create Batch Time: %s' % (time.time() - create_frame_start))
-    return train_dataset, test_dataset, y_s1, y_train['label'].value_counts(), y_test['label'].value_counts()
+    return train_dataset, test_dataset, y_train['label'].value_counts(), y_test['label'].value_counts()
 
 
 def sig_divide(segment_length, step_length, frame):
@@ -380,5 +380,5 @@ def create_pred_batch(Val_path, segment_length=2400, step_length=300, b_size=256
     val_dataset = tf.data.Dataset.from_tensor_slices((X_v1, y_v1)).batch(b_size).with_options(options)
     #print('val dataset: %s' % val_dataset.dtypes)
     
-    return val_dataset, X_v1, y_v1, y_val['label'].value_counts()
+    return val_dataset, y_v1, y_val['label'].value_counts()
 
